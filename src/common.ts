@@ -41,21 +41,17 @@ export function rest_base_url_get() {
     return service_url_get( '/entity' )
 }
 
-interface ServiceHeader {
-    name: string
-    value: string
-}
-let service_header: ServiceHeader[] = []
+let service_header = {}
 
 export function header_add( name: string, value: string ) {
-    service_header.push({name: name, value: value})
+    service_header[ name ] = value
 }
 
 export function headers_get() : Headers {
     let header = new Headers()
 
-    for( let h of service_header )
-        header.append(h.name, h.value)
+    for( let name in service_header )
+        header.append(name, service_header[ name ])
 
     return header
 } 

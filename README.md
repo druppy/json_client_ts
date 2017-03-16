@@ -30,3 +30,19 @@ async function test() {
     console.log( 'async result', await rpc<any>( 'rpc_fn_name', 42 ))
 }
 ```
+
+# Store entity
+
+Why ?
+
+Memory store
+
+# JsonRPC 2.0
+
+## Return types
+
+## Batch
+
+# RESTful json 
+
+Caching
