@@ -71,7 +71,7 @@ export function rpc<T extends Object>( method: string, ...args: any[] ) : Promis
                 'params': args
             };
 
-            let h = new Headers();
+            let h = headers_get();
             h.append('Content-Type', 'application/json')
 
             // Time to use a propper request handler from ES6
