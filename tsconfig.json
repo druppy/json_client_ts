@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "module": "es2015",
+        "target": "es5",
+        "outDir": "dist",
+        "allowSyntheticDefaultImports": true, 
+        "moduleResolution": "node",
+        "lib": [
+            "dom",
+            "es2015",
+            "es2015.promise",
+            "es2015.iterable"
+        ],
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "experimentalDecorators": true
+    },
+    "include": [
+        "src/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

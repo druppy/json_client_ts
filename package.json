@@ -1,0 +1,24 @@
+{
+  "name": "json_client_ts",
+  "version": "1.0.0",
+  "description": "Basic functions for JsonRPC 2.0, and JsonRESTful handling, written in Typescript",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/druppy/json_client_ts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/druppy/json_client_ts/issues"
+  },
+  "homepage": "https://github.com/druppy/json_client_ts#readme",
+  "devDependencies": {
+    "typescript": "^2.2.1"
+  }
+}
