@@ -33,7 +33,7 @@ export function rpc_names() : Promise<string[]> {
     })
 }
 
-function fetch_smd() : Promise<Methods> {
+export function fetch_smd() : Promise<Methods> {
     return new Promise<Methods>((resolve, reject) => {
         fetch( service_url_get( '/service.smd' ), {} ).then(( res )=> {
             let methods: Methods = {}

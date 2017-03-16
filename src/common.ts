@@ -9,7 +9,7 @@ let locale_set_fn: LocaleFn
   The provided function will be called once when we discover that the language given from
   the server has changed, and first time we get a locale from the server.
   */ 
-export function locale_set_cb( fn: LocaleFn ) {
+export function locale_cb_set( fn: LocaleFn ) {
     locale_set_fn = fn
 }
 
