@@ -45,7 +45,7 @@ export function mk_url(url: string, params: Object = {}, order: string[] = []) :
     return url
 }
 
-interface NormalizeFn<Data> {
+export interface NormalizeFn<Data> {
     (val: any) : Data
 }
 

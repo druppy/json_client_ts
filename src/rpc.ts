@@ -1,16 +1,16 @@
 import {locale_check, headers_get, rpc_url_get, service_url_get} from './common'
 
-interface Param {
+export interface Param {
     type: string; 
     optional: boolean;
 }
 
-interface Method {
+export interface Method {
     params: Param[]; 
     return_type: string; 
 }
 
-interface Methods {
+export interface Methods {
     [name:string]: Method
 }
 

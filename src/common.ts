@@ -1,4 +1,4 @@
-interface LocaleFn {
+export interface LocaleFn {
     (locale:string):void
 }
 
