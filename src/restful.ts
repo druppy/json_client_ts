@@ -4,7 +4,7 @@ import {rest_base_url_get, headers_get} from './common'
 const rest_page_size = 24
 
 /**
-    Convert a normal js object to a http query string. All non string values will 
+    Convert a normal js object to a http query string. All non string values will
     use json stringify and empty values are reflexted too.
     All is properly entity encoded
 */
@@ -62,6 +62,7 @@ export class RestIter<Data> implements Iter<Data> {
     constructor( entity_name: string, args: Object, order: string[], nfn: NormalizeFn<Data> ) {
         this.entity_name = entity_name
         this.args = args
+        this.nfn = nfn
         // need order too !!!
         this.url = mk_url( `${rest_base_url_get()}/${this.entity_name}`, args, order )
         this.reset()
@@ -83,7 +84,7 @@ export class RestIter<Data> implements Iter<Data> {
         let begin = this.begin_next
         let end = begin + rest_page_size
         this.begin_next = end
-    
+
         return new Promise<Array<Data>>((resolve, reject) => {
             // fetch buffer if none has been found before
             let key = `${begin}-${end}`
@@ -113,7 +114,7 @@ export class RestIter<Data> implements Iter<Data> {
                                 this.total = total
                             }
                         }
-                    } 
+                    }
 
                     response.json().then( jdata => {
                         resolve(jdata)
@@ -122,7 +123,12 @@ export class RestIter<Data> implements Iter<Data> {
             })
 
             p.then( data => {
-                resolve(data.data ? data.data : data )
+                let res = new Array<Data>()
+
+                for( let d of data )
+                    res.push( this.nfn( d ))
+
+                return res
             })
         })
     }
@@ -141,6 +147,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
         this.entity_name = entity_name
     }
 
+    // Make needed type conversions and default data
     protected normalize( v: any ) : Data {
         return v
     }
