@@ -128,7 +128,7 @@ export class RestIter<Data> implements Iter<Data> {
                 for( let d of data )
                     res.push( this.nfn( d ))
 
-                return res
+                resolve( res )
             })
         })
     }
