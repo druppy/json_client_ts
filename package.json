@@ -1,6 +1,6 @@
 {
   "name": "json_client_ts",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Basic functions for JsonRPC 2.0, and JsonRESTful handling, written in Typescript",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -14,8 +14,8 @@
     "url": "git+https://github.com/druppy/json_client_ts.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Bo Lorentsen",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/druppy/json_client_ts/issues"
   },

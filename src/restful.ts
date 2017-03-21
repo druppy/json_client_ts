@@ -152,6 +152,11 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
         return v
     }
 
+    // Convert the normalized to the raw format given by server on storing data
+    protected de_normalize( d: Data ) : any {
+        return d
+    }
+
     private url_get( key?: any ) : string {
         let url = `${rest_base_url_get()}/${this.entity_name}`
 
@@ -187,7 +192,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
             method: 'PUT',
             credentials: 'same-origin',
             cache: 'no-store',
-            body: JSON.stringify( data ),
+            body: JSON.stringify( this.de_normalize( data )),
             headers: headers_get()
         }).catch( err => {
             //console.error( 'Restful PUT error', err );
