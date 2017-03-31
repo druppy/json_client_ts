@@ -109,7 +109,7 @@ export class RestIter<Data> implements Iter<Data> {
                             end = parseInt( res[ 2 ] )
                             total = -1
 
-                            if( res.length == 4 ) {
+                            if( res.length == 4 && res[ 3 ].length > 0 ) {
                                 total = parseInt( res[ 3 ] )
                                 this.total = total
                             }
