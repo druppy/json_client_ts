@@ -1,4 +1,9 @@
-import {locale_check, headers_get, rpc_url_get, service_url_get} from './common'
+import {
+    RPCError,
+    locale_check, 
+    headers_get, 
+    rpc_url_get, 
+    service_url_get} from './common'
 
 export interface Param {
     type: string; 
@@ -71,7 +76,7 @@ export function rpc<T extends Object>( method: string, ...args: any[] ) : Promis
                 'params': args
             };
 
-            let h = headers_get();
+            let h = headers_get()
             h.append('Content-Type', 'application/json')
 
             // Time to use a propper request handler from ES6
@@ -85,7 +90,7 @@ export function rpc<T extends Object>( method: string, ...args: any[] ) : Promis
                 if(response.status != 200) {
                     //console.error( 'RPC HTTP error ', response.status, ':', response.statusText );
 
-                    reject({message: `RPC HTTP communication error ${response.status}`, code: -1})
+                    reject(new RPCError({message: `RPC HTTP communication error ${response.status}`, code: -1}))
                 } else {
                     if( response.headers.has( 'content-language' )) {
                         let locale = response.headers.get( 'content-language' )
@@ -100,7 +105,7 @@ export function rpc<T extends Object>( method: string, ...args: any[] ) : Promis
                                     // An error in the logic, user need to take action
                                     //console.error( 'RPC method error ', res[ 'error' ] )
 
-                                    reject( res[ 'error' ] )
+                                    reject( new RPCError( res[ 'error' ] ))
                                 } else if( 'result' in res ) {
                                     resolve( res[ 'result' ] )
                                 } else {
@@ -111,18 +116,24 @@ export function rpc<T extends Object>( method: string, ...args: any[] ) : Promis
                                 //console.error( 'RPC protocol error for ', method, ' payload ',
                                 //    JSON.stringify(envelope), ' result ', res )
 
-                                reject({message: 'jsonrpc sequence mismatch in method ' + method, code: -1})
+                                reject(new RPCError({
+                                    message: 'jsonrpc sequence mismatch in method ' + method, 
+                                    code: -1
+                                }))
                             }
                         })
                     } else
-                        reject({message: 'RPC response not json encoded, but ' + response.headers.get('Content-Type'), code: -1})
+                        reject(new RPCError({
+                            message: 'RPC response not json encoded, but ' + response.headers.get('Content-Type'), 
+                            code: -1
+                        }))
                 }
             }).catch((error) => {
                 // the backend is gone ...
                 //console.error( 'RPC comm error ', error )
 
-                reject({message:error, code: -1})
-            });
+                reject(new RPCError({message: error, code: -1}))
+            })
         }
     )
 }
@@ -177,7 +188,10 @@ export class Batch {
                 if(response.status != 200) {
                     //console.error( 'RPC HTTP error ', response.status, ' ', response.statusText )
 
-                    reject({message: `RPC HTTP communication error ${response.status}`, code: -1})
+                    reject(new RPCError({
+                        message: `RPC HTTP communication error ${response.status}`, 
+                        code: -1
+                    }))
                 } else {
                     if (response.headers.get('Content-Type').match( 'application/json' )) {
                         response.json().then((res) => {
@@ -190,7 +204,7 @@ export class Batch {
                                     if( 'result' in res )
                                         cur.resolve( res[ 'result' ])
                                     else
-                                        cur.reject( res[ 'error' ])
+                                        cur.reject( new RPCError( res[ 'error' ]))
                                 }
                             }
                         })

@@ -5,6 +5,18 @@ export interface LocaleFn {
 let locale_current: string
 let locale_set_fn: LocaleFn
 
+export class RPCError extends Error {
+    code: number
+    sql: string
+
+    constructor( msg: any ) {
+        super(msg[ 'message' ])
+
+        this.code = 'code' in msg ? msg[ 'code' ] : -1
+        this.sql = 'sql' in msg ? msg[ 'sql' ] : ''
+    }
+}
+
 /**
   The provided function will be called once when we discover that the language given from
   the server has changed, and first time we get a locale from the server.

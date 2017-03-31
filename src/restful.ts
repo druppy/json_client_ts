@@ -182,7 +182,8 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
                     resolve( this.normalize( jdata ))
                 })
             }).catch( err => {
-                //console.error( 'Restful GET error', err );
+                console.error( 'Restful GET error', err );
+                reject( err )
             })
         })
     }
@@ -195,7 +196,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
             body: JSON.stringify( this.de_normalize( data )),
             headers: headers_get()
         }).catch( err => {
-            //console.error( 'Restful PUT error', err );
+            console.error( 'Restful PUT error', err );
         })
     }
 
@@ -212,7 +213,8 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
                     resolve( this.normalize( jdata ))
                 })
             }).catch( err => {
-                //console.error( 'Restful POST error', err );
+                // console.error( 'Restful POST error', err );
+                reject( err )
             })
         })
     }
@@ -224,7 +226,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
             cache: 'no-store',
             headers: headers_get()
         }).catch( err => {
-            //console.error( 'Restful DELETE error', err );
+            console.error( 'Restful DELETE error', err );
         })
     }
 
