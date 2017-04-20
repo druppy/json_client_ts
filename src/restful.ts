@@ -188,8 +188,8 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
         })
     }
 
-    public set( key: number, data: Data ) : void {
-        fetch( this.url_get( key ), {
+    public set( key: number, data: Data ) {
+        return fetch( this.url_get( key ), {
             method: 'PUT',
             credentials: 'same-origin',
             cache: 'no-store',
@@ -219,8 +219,8 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
         })
     }
 
-    public remove( key: number ) : void {
-        fetch( this.url_get( key ), {
+    public remove( key: number ) {
+        return fetch( this.url_get( key ), {
             method: 'DELETE',
             credentials: 'same-origin',
             cache: 'no-store',
