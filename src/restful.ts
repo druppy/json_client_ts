@@ -206,7 +206,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
                 method: 'POST',
                 credentials: 'same-origin',
                 cache: 'no-store',
-                body: JSON.stringify( data ),
+                body: JSON.stringify( this.de_normalize( data )),
                 headers: headers_get()
             }).then((res) => {
                 res.json().then(jdata => {
