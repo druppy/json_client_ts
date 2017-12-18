@@ -53,6 +53,7 @@ const items_reg = /items (\d+)-(\d+)\/?(\d*)/
 export class RestIter<Data> implements Iter<Data> {
     private total = -1
     private begin_next = 0
+    private page_size = rest_page_size
     private entity_name: string
     private args: any
     private nfn: NormalizeFn<Data>
@@ -72,6 +73,13 @@ export class RestIter<Data> implements Iter<Data> {
         this.begin_next = 0
     }
 
+    /**
+     * Overwrite default page size
+     */
+    public page_size_set( new_size: number ) {
+        this.page_size = new_size
+    }
+
     public total_count() : number {
         return this.total
     }
@@ -82,8 +90,10 @@ export class RestIter<Data> implements Iter<Data> {
             return null
 
         let begin = this.begin_next
-        let end = begin + rest_page_size
-        this.begin_next = end
+        let end = begin + this.page_size
+        if( end > this.total )
+            end = this.total
+        this.begin_next = end + 1
 
         return new Promise<Array<Data>>((resolve, reject) => {
             // fetch buffer if none has been found before
