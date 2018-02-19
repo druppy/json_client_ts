@@ -129,6 +129,8 @@ export class RestIter<Data> implements Iter<Data> {
                     response.json().then( jdata => {
                         resolve(jdata)
                     })
+                }).catch( err => {
+                    reject( err )
                 })
             })
 
