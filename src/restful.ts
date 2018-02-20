@@ -91,7 +91,7 @@ export class RestIter<Data> implements Iter<Data> {
 
         let begin = this.begin_next
         let end = begin + this.page_size
-        if( end > this.total )
+        if( this.total > -1 && end > this.total )
             end = this.total
         this.begin_next = end + 1
 
