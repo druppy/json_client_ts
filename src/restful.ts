@@ -200,15 +200,22 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
         })
     }
 
-    public set( key: number, data: Data ) {
-        return fetch( this.url_get( key ), {
-            method: 'PUT',
-            credentials: 'same-origin',
-            cache: 'no-store',
-            body: JSON.stringify( this.de_normalize( data )),
-            headers: headers_get()
-        }).catch( err => {
-            console.error( 'Restful PUT error', err );
+    public set( key: number, data: Data ) : Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            fetch( this.url_get( key ), {
+                method: 'PUT',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                body: JSON.stringify( this.de_normalize( data )),
+                headers: headers_get()
+            }).then(res => {
+                res.json().then(jdata => {
+                    resolve( jdata )
+                })
+            }).catch( err => {
+                // console.error( 'Restful PUT error', err )
+                reject( err )
+            })
         })
     }
 
@@ -231,14 +238,21 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
         })
     }
 
-    public remove( key: number ) {
-        return fetch( this.url_get( key ), {
-            method: 'DELETE',
-            credentials: 'same-origin',
-            cache: 'no-store',
-            headers: headers_get()
-        }).catch( err => {
-            console.error( 'Restful DELETE error', err );
+    public remove( key: number ) : Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            fetch( this.url_get( key ), {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: headers_get()
+            }).then( res => {
+                res.json().then(jdata => {
+                    resolve( jdata )
+                })
+            }).catch( err => {
+                // console.error( 'Restful DELETE error', err );
+                reject( err )
+            })
         })
     }
 
