@@ -1,5 +1,5 @@
 import {Iter, Entity, WatchCallback} from './store'
-import {rest_base_url_get, headers_get} from './common'
+import {Session} from './session'
 
 const rest_page_size = 24
 
@@ -151,12 +151,15 @@ export class RestIter<Data> implements Iter<Data> {
  * that handle paged loading for large result set
  */
 
-export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
+export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> {
     private entity_name: string
     private key_name = 'id'
+    private sess: Session
 
-    constructor( entity_name: string ) {
+    constructor( sess: Session, entity_name: string ) {
         this.entity_name = entity_name
+
+        this.sess = sess
     }
 
     // Make needed type conversions and default data
@@ -170,7 +173,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
     }
 
     private url_get( key?: any ) : string {
-        let url = `${rest_base_url_get()}/${this.entity_name}`
+        let url = `${this.sess.rest_base_url_get()}/${this.entity_name}`
 
         if( key )
             url += `/${key}`
@@ -188,7 +191,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
                 method: 'GET',
                 credentials: 'same-origin',
                 cache: 'no-store',
-                headers: headers_get()
+                headers: this.sess.headers_get()
             }).then((res) => {
                 res.json().then(jdata => {
                     resolve( this.normalize( jdata ))
@@ -207,7 +210,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
                 credentials: 'same-origin',
                 cache: 'no-store',
                 body: JSON.stringify( this.de_normalize( data )),
-                headers: headers_get()
+                headers: this.sess.headers_get()
             }).then(res => {
                 res.json().then(jdata => {
                     resolve( jdata )
@@ -226,7 +229,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
                 credentials: 'same-origin',
                 cache: 'no-store',
                 body: JSON.stringify( this.de_normalize( data )),
-                headers: headers_get()
+                headers: this.sess.headers_get()
             }).then((res) => {
                 res.json().then(jdata => {
                     resolve( this.normalize( jdata ))
@@ -244,7 +247,7 @@ export class RestEntity<Data, ArgsT> implements Entity<number, Data, ArgsT> {
                 method: 'DELETE',
                 credentials: 'same-origin',
                 cache: 'no-store',
-                headers: headers_get()
+                headers: this.sess.headers_get()
             }).then( res => {
                 res.json().then(jdata => {
                     resolve( jdata )

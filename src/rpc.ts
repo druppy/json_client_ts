@@ -1,9 +1,5 @@
-import {
-    RPCError,
-    locale_check, 
-    headers_get, 
-    rpc_url_get, 
-    service_url_get} from './common'
+import {RPCError} from './common'
+import {Session} from './session'
 
 export interface Param {
     type: string; 
@@ -20,9 +16,9 @@ export interface Methods {
 }
 
 // Return a list of method names
-export function rpc_names() : Promise<string[]> {
+export function rpc_names_sess(sess: Session) : Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
-        fetch_smd().then( res => {
+        fetch_smd_sess(sess).then( res => {
             var n : string[] = []
 
             for( let m in res ) {
@@ -38,9 +34,9 @@ export function rpc_names() : Promise<string[]> {
     })
 }
 
-export function fetch_smd() : Promise<Methods> {
+export function fetch_smd_sess(sess: Session) : Promise<Methods> {
     return new Promise<Methods>((resolve, reject) => {
-        fetch( service_url_get( '/service.smd' ), {} ).then(( res )=> {
+        fetch( sess.service_url_get( '/service.smd' ), {} ).then(( res: {[i:string]:any} )=> {
             let methods: Methods = {}
 
             for( var name in res['services'] ) {
@@ -65,7 +61,7 @@ export function fetch_smd() : Promise<Methods> {
 }
 
 var last_rpc_seq_id = 0
-export function rpc<T extends Object>( method: string, ...args: any[] ) : Promise<T> {
+export function rpc_sess<T extends Object>( sess: Session, method: string, ...args: any[] ) : Promise<T> {
     return new Promise<T>((resolve, reject) => {
             var id = last_rpc_seq_id++;
 
@@ -76,11 +72,11 @@ export function rpc<T extends Object>( method: string, ...args: any[] ) : Promis
                 'params': args
             };
 
-            let h = headers_get()
+            let h = sess.headers_get()
             h.append('Content-Type', 'application/json')
 
             // Time to use a propper request handler from ES6
-            let conn = fetch( rpc_url_get(), {
+            let conn = fetch( sess.rpc_url_get(), {
                 method: 'POST',
                 credentials: 'same-origin',
                 body: JSON.stringify( envelope ),
@@ -94,11 +90,13 @@ export function rpc<T extends Object>( method: string, ...args: any[] ) : Promis
                 } else {
                     if( response.headers.has( 'content-language' )) {
                         let locale = response.headers.get( 'content-language' )
-                        
-                        locale_check( locale )
+
+                        if( typeof locale == 'string')
+                            sess.locale_check( locale )
                     }
 
-                    if (response.headers.get('Content-Type').match( 'application/json' )) {
+                    let content_type = response.headers.get('Content-Type')
+                    if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
                         response.json().then((res) => {
                             if( res[ 'id' ] == id ) {
                                 if( 'error' in res ) {
@@ -150,6 +148,11 @@ export class Batch {
     private payload: any[] = []
     private last_id = 0
     private ids: {[key:number]: {resolve: {(res: any) : void}, reject:{( err?: any ) : void} }} = {}
+    private sess: Session
+
+    constructor( sess: Session ) {
+        this.sess = sess
+    }
 
     public rpc( method: string, ...args: any[] ) : Promise<any> {
         let id = ++this.last_id
@@ -175,10 +178,10 @@ export class Batch {
 
     public commit() : Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            let h = headers_get()
+            let h = sess.headers_get()
             h.append('Content-Type', 'application/json')
 
-            fetch( rpc_url_get(), {
+            fetch( sess.rpc_url_get(), {
                 method: 'POST',
                 credentials: 'same-origin',
                 body: JSON.stringify( this.payload ),
@@ -193,7 +196,9 @@ export class Batch {
                         code: -1
                     }))
                 } else {
-                    if (response.headers.get('Content-Type').match( 'application/json' )) {
+                    let content_type = response.headers.get('Content-Type')
+
+                    if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
                         response.json().then((res) => {
                             for( let r of res ) {
                                 let id = parseInt( r[ 'id' ] )
