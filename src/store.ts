@@ -2,7 +2,7 @@
 // We all have to wait for ES6 iterators, in order to use for ... of structure ... sigth ...
 export interface Iter<DataT> {
     total_count() : number
-    next() : Promise<Array<DataT>>
+    next() : Promise<Array<DataT>> | null
 }
 
 export interface WatchCallback<Data>{
@@ -24,6 +24,7 @@ export interface Entity<KeyT, DataT, ArgsT extends Object> {
     query( args: ArgsT, order?: string[] ) : Iter<DataT>
 }
 
+/*
 export interface UpdateDataRow<DataT> {
     state: 'create'|'delete'|'update'|'clean'
     data: DataT
@@ -52,12 +53,12 @@ class UpdateIterator<KeyT, DataT> implements UpdatedDataIter<DataT> {
     }
 }
 
-/** 
-    This is a spacial entity that can handle updates and store these in memory, in order to 
-    store the result at a later time.
-*/
+ 
+//    This is a spacial entity that can handle updates and store these in memory, in order to 
+//    store the result at a later time.
+
 export class UpdateEntity<KeyT, DataT, ArgsT extends Object> implements Entity<KeyT, DataT, ArgsT> {
-    private entity: Entity <KeyT, DataT, ArgsT> = null
+    private entity: Entity <KeyT, DataT, ArgsT>
     private buffer: Map<KeyT, UpdateDataRow<DataT>> = new Map<KeyT, UpdateDataRow<DataT>>()
 
     SaveBufferEntity( entity: Entity<KeyT, DataT, ArgsT> ) {
@@ -139,3 +140,4 @@ export class UpdateEntity<KeyT, DataT, ArgsT extends Object> implements Entity<K
         this.buffer.clear()
     }
 }
+*/

@@ -56,16 +56,19 @@ export class RestIter<Data> implements Iter<Data> {
     private page_size = rest_page_size
     private entity_name: string
     private args: any
-    private nfn: NormalizeFn<Data>
+    private nfn?: NormalizeFn<Data>
+    private sess: Session
 
     private url: string
 
-    constructor( entity_name: string, args: Object, order: string[], nfn: NormalizeFn<Data> ) {
+    constructor( sess: Session, entity_name: string, args: Object, order?: string[], nfn?: NormalizeFn<Data> ) {
+        this.sess = sess
         this.entity_name = entity_name
         this.args = args
-        this.nfn = nfn
+        if( nfn != undefined )
+            this.nfn = nfn
         // need order too !!!
-        this.url = mk_url( `${rest_base_url_get()}/${this.entity_name}`, args, order )
+        this.url = mk_url( `${sess.rest_base_url_get()}/${this.entity_name}`, args, order )
         this.reset()
     }
 
@@ -85,7 +88,7 @@ export class RestIter<Data> implements Iter<Data> {
     }
 
     // Fetch the next page of data
-    public next() : Promise<Array<Data>> {
+    public next() : Promise<Array<Data>>|null {
         if( this.total != -1 && this.begin_next >= this.total )
             return null
 
@@ -100,7 +103,7 @@ export class RestIter<Data> implements Iter<Data> {
             let key = `${begin}-${end}`
 
             let p = new Promise<any>(( resolve, reject ) => {
-                let h = headers_get()
+                let h = this.sess.headers_get()
                 h.append('Range', `items=${begin}-${end}` )
 
                 fetch( this.url, {
@@ -112,16 +115,20 @@ export class RestIter<Data> implements Iter<Data> {
                     let start = 0, end = 0, total = -1
 
                     if( response.headers.has( 'Content-Range' )) {
-                        let res = items_reg.exec( response.headers.get( 'Content-Range' ))
+                        let range = response.headers.get('Content-Range')
 
-                        if( res ) {
-                            start = parseInt( res[ 1 ] )
-                            end = parseInt( res[ 2 ] )
-                            total = -1
+                        if (typeof range == 'string') {
+                            let res = items_reg.exec( range )
 
-                            if( res.length == 4 && res[ 3 ].length > 0 ) {
-                                total = parseInt( res[ 3 ] )
-                                this.total = total
+                            if( res ) {
+                                start = parseInt( res[ 1 ] )
+                                end = parseInt( res[ 2 ] )
+                                total = -1
+
+                                if( res.length == 4 && res[ 3 ].length > 0 ) {
+                                    total = parseInt( res[ 3 ] )
+                                    this.total = total
+                                }
                             }
                         }
                     }
@@ -138,7 +145,8 @@ export class RestIter<Data> implements Iter<Data> {
                 let res = new Array<Data>()
 
                 for( let d of data )
-                    res.push( this.nfn( d ))
+                    if( this.nfn )
+                        res.push( this.nfn( d ))
 
                 resolve( res )
             })
@@ -264,6 +272,6 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
     }
 
     public query( args: ArgsT, order?: string[] ) : Iter<Data> {
-        return new RestIter<Data>( this.entity_name, args, order, this.normalize )
+        return new RestIter<Data>( this.sess, this.entity_name, args, order, this.normalize )
     }
 }

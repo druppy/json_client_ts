@@ -1,10 +1,11 @@
 import { rpc_sess, rpc_names_sess, fetch_smd_sess} from './rpc'
 import { RestEntityBase } from './restful';
+import { LocaleFn } from './common'
 
 export class Session {
     service_url = '/service'
     service_header: { [i: string]: string } = {}
-    locale_set_fn: LocaleFn 
+    locale_set_fn?: LocaleFn 
     locale_current = ''
 
     /**

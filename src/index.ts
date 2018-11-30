@@ -2,7 +2,8 @@
 import { Session } from './session'
 import { RestEntityBase } from './restful'
 import { rpc_sess, rpc_names_sess, fetch_smd_sess } from './rpc'
-export {Entity, Iter, WatchCallback, UpdateEntity} from './store'
+import {LocaleFn} from './common'
+export {Entity, Iter, WatchCallback} from './store'
 export {RestIter} from './restful'
 export {Session} from './session'
 

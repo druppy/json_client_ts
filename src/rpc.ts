@@ -1,6 +1,9 @@
 import {RPCError} from './common'
 import {Session} from './session'
 
+let browserCheck = new Function("try {return this===window;}catch(e){ return false;}");
+let is_browser = browserCheck();
+
 export interface Param {
     type: string; 
     optional: boolean;
@@ -95,6 +98,19 @@ export function rpc_sess<T extends Object>( sess: Session, method: string, ...ar
                             sess.locale_check( locale )
                     }
 
+                    // If not a browser, get cookie from responce and set it on next header
+                    // XXX this is a quick fix and does not replace a real cookie jar 
+                    if (!is_browser && response.headers.has("Set-Cookie")) {
+                        let cookies = response.headers.get('Set-Cookie')
+
+                        if( typeof cookies == 'string' ) {
+                            let m = /(.+?)=([^;]*)/.exec( cookies )
+
+                            if( m ) 
+                                sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
+                        }
+                    }
+
                     let content_type = response.headers.get('Content-Type')
                     if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
                         response.json().then((res) => {
@@ -178,10 +194,10 @@ export class Batch {
 
     public commit() : Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            let h = sess.headers_get()
+            let h = this.sess.headers_get()
             h.append('Content-Type', 'application/json')
 
-            fetch( sess.rpc_url_get(), {
+            fetch( this.sess.rpc_url_get(), {
                 method: 'POST',
                 credentials: 'same-origin',
                 body: JSON.stringify( this.payload ),
