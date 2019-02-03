@@ -17,10 +17,6 @@
     "type": "git",
     "url": "git+https://github.com/druppy/json_client_ts.git"
   },
-  "files": [
-    "src",
-    "tsconfig.json"
-  ],
   "keywords": [],
   "author": "Bo Lorentsen",
   "license": "MIT",
