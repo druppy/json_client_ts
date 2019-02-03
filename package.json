@@ -18,8 +18,8 @@
     "url": "git+https://github.com/druppy/json_client_ts.git"
   },
   "files": [
-    "lib",
-    "es"
+    "src",
+    "tsconfig.json"
   ],
   "keywords": [],
   "author": "Bo Lorentsen",
