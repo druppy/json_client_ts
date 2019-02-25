@@ -1,4 +1,4 @@
-import { rpc_sess, rpc_names_sess, fetch_smd_sess} from './rpc'
+import { rpc_sess, rpc_names_sess, fetch_smd_sess, Members} from './rpc'
 import { RestEntityBase } from './restful';
 import { LocaleFn } from './common'
 

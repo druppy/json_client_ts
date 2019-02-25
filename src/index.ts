@@ -1,7 +1,7 @@
 // define how the module will look like
 import { Session } from './session'
 import { RestEntityBase } from './restful'
-import { rpc_sess, rpc_names_sess, fetch_smd_sess } from './rpc'
+import { rpc_sess, rpc_names_sess, fetch_smd_sess, Members } from './rpc'
 import {LocaleFn} from './common'
 export {Entity, Iter, WatchCallback} from './store'
 export {RestIter} from './restful'
