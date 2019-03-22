@@ -154,6 +154,10 @@ export class RestIter<Data> implements Iter<Data> {
     }
 }
 
+export interface Options {
+    http_errors: boolean
+}
+
 /**
  * Define a rest entity store, that can handle normal RESTful json ations, and a query
  * that handle paged loading for large result set
@@ -163,11 +167,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
     private entity_name: string
     private key_name = 'id'
     private sess: Session
+    private options: Options
 
-    constructor( sess: Session, entity_name: string ) {
+    constructor( sess: Session, entity_name: string, options?: Options ) {
         this.entity_name = entity_name
 
         this.sess = sess
+        this.options = options
     }
 
     // Make needed type conversions and default data
@@ -201,9 +207,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 cache: 'no-store',
                 headers: this.sess.headers_get()
             }).then((res) => {
-                res.json().then(jdata => {
-                    resolve( this.normalize( jdata ))
-                })
+                if( this.options && this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( this.normalize( jdata ))
+                    })
+                }
             }).catch( err => {
                 console.error( 'Restful GET error', err );
                 reject( err )
@@ -220,9 +230,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 body: JSON.stringify( this.de_normalize( data )),
                 headers: this.sess.headers_get()
             }).then(res => {
-                res.json().then(jdata => {
-                    resolve( jdata )
-                })
+                if( this.options && this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( jdata )
+                    })
+                }
             }).catch( err => {
                 // console.error( 'Restful PUT error', err )
                 reject( err )
@@ -239,9 +253,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 body: JSON.stringify( this.de_normalize( data )),
                 headers: this.sess.headers_get()
             }).then((res) => {
-                res.json().then(jdata => {
-                    resolve( this.normalize( jdata ))
-                })
+                if( this.options && this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( this.normalize( jdata ))
+                    })
+                }
             }).catch( err => {
                 // console.error( 'Restful POST error', err );
                 reject( err )
@@ -257,9 +275,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 cache: 'no-store',
                 headers: this.sess.headers_get()
             }).then( res => {
-                res.json().then(jdata => {
-                    resolve( jdata )
-                })
+                if( this.options && this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( jdata )
+                    })
+                }
             }).catch( err => {
                 // console.error( 'Restful DELETE error', err );
                 reject( err )
