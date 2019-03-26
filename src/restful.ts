@@ -58,15 +58,17 @@ export class RestIter<Data> implements Iter<Data> {
     private args: any
     private nfn?: NormalizeFn<Data>
     private sess: Session
+    private options: Options
 
     private url: string
 
-    constructor( sess: Session, entity_name: string, args: Object, order?: string[], nfn?: NormalizeFn<Data> ) {
+    constructor( sess: Session, entity_name: string, args: Object, options: Options, order?: string[], nfn?: NormalizeFn<Data> ) {
         this.sess = sess
         this.entity_name = entity_name
         this.args = args
         if( nfn != undefined )
             this.nfn = nfn
+        this.options = options
         // need order too !!!
         this.url = mk_url( `${sess.rest_base_url_get()}/${this.entity_name}`, args, order )
         this.reset()
@@ -112,6 +114,10 @@ export class RestIter<Data> implements Iter<Data> {
                     cache: 'no-store',
                     headers: h
                 }).then((response) => {
+                    if( this.options.http_errors && !response.ok) {
+                        reject( new Error( "HTTP error: " + response.statusText ))
+                        return
+                    }
                     let start = 0, end = 0, total = -1
 
                     if( response.headers.has( 'Content-Range' )) {
@@ -149,6 +155,8 @@ export class RestIter<Data> implements Iter<Data> {
                         res.push( this.nfn( d ))
 
                 resolve( res )
+            }).catch(err => {
+                reject( err )
             })
         })
     }
@@ -173,7 +181,11 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
         this.entity_name = entity_name
 
         this.sess = sess
-        this.options = options
+        if(options != undefined) {
+            this.options = options
+        } else {
+            this.options = { http_errors: false }
+        }
     }
 
     // Make needed type conversions and default data
@@ -207,7 +219,7 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 cache: 'no-store',
                 headers: this.sess.headers_get()
             }).then((res) => {
-                if( this.options && this.options.http_errors && !res.ok) {
+                if( this.options.http_errors && !res.ok) {
                     reject( new Error( "HTTP error: " + res.statusText ))
                 } else {
                     res.json().then(jdata => {
@@ -230,7 +242,7 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 body: JSON.stringify( this.de_normalize( data )),
                 headers: this.sess.headers_get()
             }).then(res => {
-                if( this.options && this.options.http_errors && !res.ok) {
+                if( this.options.http_errors && !res.ok) {
                     reject( new Error( "HTTP error: " + res.statusText ))
                 } else {
                     res.json().then(jdata => {
@@ -253,7 +265,7 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 body: JSON.stringify( this.de_normalize( data )),
                 headers: this.sess.headers_get()
             }).then((res) => {
-                if( this.options && this.options.http_errors && !res.ok) {
+                if( this.options.http_errors && !res.ok) {
                     reject( new Error( "HTTP error: " + res.statusText ))
                 } else {
                     res.json().then(jdata => {
@@ -275,7 +287,7 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 cache: 'no-store',
                 headers: this.sess.headers_get()
             }).then( res => {
-                if( this.options && this.options.http_errors && !res.ok) {
+                if( this.options.http_errors && !res.ok) {
                     reject( new Error( "HTTP error: " + res.statusText ))
                 } else {
                     res.json().then(jdata => {
@@ -294,6 +306,6 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
     }
 
     public query( args: ArgsT, order?: string[] ) : Iter<Data> {
-        return new RestIter<Data>( this.sess, this.entity_name, args, order, this.normalize )
+        return new RestIter<Data>( this.sess, this.entity_name, args, this.options, order, this.normalize)
     }
 }
