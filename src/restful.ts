@@ -58,15 +58,17 @@ export class RestIter<Data> implements Iter<Data> {
     private args: any
     private nfn?: NormalizeFn<Data>
     private sess: Session
+    private options: Options
 
     private url: string
 
-    constructor( sess: Session, entity_name: string, args: Object, order?: string[], nfn?: NormalizeFn<Data> ) {
+    constructor( sess: Session, entity_name: string, args: Object, options: Options, order?: string[], nfn?: NormalizeFn<Data> ) {
         this.sess = sess
         this.entity_name = entity_name
         this.args = args
         if( nfn != undefined )
             this.nfn = nfn
+        this.options = options
         // need order too !!!
         this.url = mk_url( `${sess.rest_base_url_get()}/${this.entity_name}`, args, order )
         this.reset()
@@ -112,6 +114,10 @@ export class RestIter<Data> implements Iter<Data> {
                     cache: 'no-store',
                     headers: h
                 }).then((response) => {
+                    if( this.options.http_errors && !response.ok) {
+                        reject( new Error( "HTTP error: " + response.statusText ))
+                        return
+                    }
                     let start = 0, end = 0, total = -1
 
                     if( response.headers.has( 'Content-Range' )) {
@@ -149,9 +155,15 @@ export class RestIter<Data> implements Iter<Data> {
                         res.push( this.nfn( d ))
 
                 resolve( res )
+            }).catch(err => {
+                reject( err )
             })
         })
     }
+}
+
+export interface Options {
+    http_errors: boolean
 }
 
 /**
@@ -163,11 +175,17 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
     private entity_name: string
     private key_name = 'id'
     private sess: Session
+    private options: Options
 
-    constructor( sess: Session, entity_name: string ) {
+    constructor( sess: Session, entity_name: string, options?: Options ) {
         this.entity_name = entity_name
 
         this.sess = sess
+        if(options != undefined) {
+            this.options = options
+        } else {
+            this.options = { http_errors: false }
+        }
     }
 
     // Make needed type conversions and default data
@@ -201,9 +219,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 cache: 'no-store',
                 headers: this.sess.headers_get()
             }).then((res) => {
-                res.json().then(jdata => {
-                    resolve( this.normalize( jdata ))
-                })
+                if( this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( this.normalize( jdata ))
+                    })
+                }
             }).catch( err => {
                 console.error( 'Restful GET error', err );
                 reject( err )
@@ -220,9 +242,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 body: JSON.stringify( this.de_normalize( data )),
                 headers: this.sess.headers_get()
             }).then(res => {
-                res.json().then(jdata => {
-                    resolve( jdata )
-                })
+                if( this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( jdata )
+                    })
+                }
             }).catch( err => {
                 // console.error( 'Restful PUT error', err )
                 reject( err )
@@ -239,9 +265,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 body: JSON.stringify( this.de_normalize( data )),
                 headers: this.sess.headers_get()
             }).then((res) => {
-                res.json().then(jdata => {
-                    resolve( this.normalize( jdata ))
-                })
+                if( this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( this.normalize( jdata ))
+                    })
+                }
             }).catch( err => {
                 // console.error( 'Restful POST error', err );
                 reject( err )
@@ -257,9 +287,13 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 cache: 'no-store',
                 headers: this.sess.headers_get()
             }).then( res => {
-                res.json().then(jdata => {
-                    resolve( jdata )
-                })
+                if( this.options.http_errors && !res.ok) {
+                    reject( new Error( "HTTP error: " + res.statusText ))
+                } else {
+                    res.json().then(jdata => {
+                        resolve( jdata )
+                    })
+                }
             }).catch( err => {
                 // console.error( 'Restful DELETE error', err );
                 reject( err )
@@ -272,6 +306,6 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
     }
 
     public query( args: ArgsT, order?: string[] ) : Iter<Data> {
-        return new RestIter<Data>( this.sess, this.entity_name, args, order, this.normalize )
+        return new RestIter<Data>( this.sess, this.entity_name, args, this.options, order, this.normalize)
     }
 }

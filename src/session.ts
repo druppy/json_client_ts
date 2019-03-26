@@ -1,4 +1,4 @@
-import { rpc_sess, rpc_names_sess, fetch_smd_sess, Members} from './rpc'
+import { rpc_sess, rpc_names_sess, fetch_smd_sess, Methods } from './rpc'
 import { RestEntityBase } from './restful';
 import { LocaleFn } from './common'
 
@@ -67,7 +67,7 @@ export class Session {
         return rpc_sess<T>(this, method, ...args)
     }
 
-    fetch_smd() {
+    fetch_smd() : Promise<Methods> {
         return fetch_smd_sess( this )
     }
 
