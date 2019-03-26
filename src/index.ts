@@ -1,7 +1,7 @@
 // define how the module will look like
 import { Session } from './session'
-import { RestEntityBase } from './restful'
-import { rpc_sess, rpc_names_sess, fetch_smd_sess } from './rpc'
+import { RestEntityBase, Options } from './restful'
+import { rpc_sess, rpc_names_sess, fetch_smd_sess, Methods } from './rpc'
 import {LocaleFn} from './common'
 export {Entity, Iter, WatchCallback} from './store'
 export {RestIter} from './restful'
@@ -46,8 +46,12 @@ export function rpc_names() {
     return rpc_names_sess(global_session)
 }
 
-export function fetch_smd() {
+export function fetch_smd() : Promise<Methods> {
     return fetch_smd_sess(global_session)
 }
 
-export class RestEntity<Data, ArgsT> extends RestEntityBase<Data, ArgsT> { }
+export class RestEntity<Data, ArgsT> extends RestEntityBase<Data, ArgsT> {
+    constructor( entity_name: string, options?: Options) {
+        super(global_session, entity_name, options)
+    }
+}
