@@ -7,6 +7,7 @@ export class Session {
     service_header: { [i: string]: string } = {}
     locale_set_fn?: LocaleFn 
     locale_current = ''
+    http_errors = false
 
     /**
      The provided function will be called once when we discover that the language given from

@@ -184,7 +184,7 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
         if(options != undefined) {
             this.options = options
         } else {
-            this.options = { http_errors: false }
+            this.options = { http_errors: sess.http_errors }
         }
     }
 

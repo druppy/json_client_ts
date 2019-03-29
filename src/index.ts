@@ -10,6 +10,11 @@ export {Session} from './session'
 // compatility functions, to emulate old global scope
 let global_session = new Session()
 
+// make sure all http errors is handled as rejects (exceptions using await)
+export function http_errors_set( use_exceptions: boolean ) {
+    global_session.http_errors = use_exceptions
+}
+
 export function locale_cb_set(fn: LocaleFn) {
     global_session.locale_cb_set(fn)
 }
