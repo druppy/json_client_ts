@@ -86,9 +86,7 @@ export function rpc_sess<T extends Object>( sess: Session, method: string, ...ar
                 cache: 'no-store',
                 headers: h
             }).then((response) => {
-                if(response.status != 200) {
-                    //console.error( 'RPC HTTP error ', response.status, ':', response.statusText );
-
+                if(!response.ok) {
                     reject(new RPCError({message: `RPC HTTP communication error ${response.status}`, code: -1}))
                 } else {
                     if( response.headers.has( 'content-language' )) {
@@ -204,9 +202,7 @@ export class Batch {
                 cache: 'no-store',
                 headers: h
             }).then((response) => {
-                if(response.status != 200) {
-                    //console.error( 'RPC HTTP error ', response.status, ' ', response.statusText )
-
+                if(!response.ok) {
                     reject(new RPCError({
                         message: `RPC HTTP communication error ${response.status}`, 
                         code: -1
