@@ -62,19 +62,22 @@ export class RestIter<Data> implements Iter<Data> {
 
     private url: string
 
-    constructor( sess: Session, entity_name: string, args: Object, options: Options, order?: string[], nfn?: NormalizeFn<Data> ) {
+    constructor( sess: Session, entity_name: string, args: Object, options: Options, order?: string[], offset?: number, limit?: number, nfn?: NormalizeFn<Data> ) {
         this.sess = sess
         this.entity_name = entity_name
         this.args = args
         if( nfn != undefined )
             this.nfn = nfn
+        if( offset != undefined )
+            this.begin_next = offset
+        if( limit != undefined )
+            this.page_size = limit
         this.options = options
-        // need order too !!!
         this.url = mk_url( `${sess.rest_base_url_get()}/${this.entity_name}`, args, order )
-        this.reset()
     }
 
     public reset() : void {
+        console.warn( "RestIter.reset() will be deprecated in json_client_ts 0.2" )
         this.begin_next = 0
     }
 
@@ -82,6 +85,7 @@ export class RestIter<Data> implements Iter<Data> {
      * Overwrite default page size
      */
     public page_size_set( new_size: number ) {
+        console.warn( "RestIter.page_size_set(number) will be deprecated in json_client_ts 0.2" )
         this.page_size = new_size
     }
 
@@ -305,7 +309,7 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
         // Nothing yet
     }
 
-    public query( args: ArgsT, order?: string[] ) : Iter<Data> {
-        return new RestIter<Data>( this.sess, this.entity_name, args, this.options, order, this.normalize)
+    public query( args: ArgsT, order?: string[], offset?: number, limit?: number) : Iter<Data> {
+        return new RestIter<Data>( this.sess, this.entity_name, args, this.options, order, offset, limit, this.normalize)
     }
 }
