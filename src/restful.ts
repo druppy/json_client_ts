@@ -17,7 +17,7 @@ export function mk_query(params: Object) : string {
         if( qs.length > 0 )
             qs += '&'
 
-        if( value ) {
+        if( value != null ) {
             if( typeof value != 'string' )
                 value = JSON.stringify( value )
 
