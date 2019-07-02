@@ -18,7 +18,9 @@ export function mk_query(params: Object) : string {
             qs += '&'
 
         if( value != null ) {
-            if( typeof value != 'string' )
+            if( value instanceof Date)
+                value = value.toISOString()
+            else if( typeof value != 'string' )
                 value = JSON.stringify( value )
 
             qs += `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
