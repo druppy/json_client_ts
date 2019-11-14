@@ -96,14 +96,14 @@ export class RestIter<Data> implements Iter<Data> {
     }
 
     // Fetch the next page of data
-    public next() : Promise<Array<Data>>|null {
+    public next() {
         if( this.total != -1 && this.begin_next >= this.total )
             return null
 
         let begin = this.begin_next
         let end = begin + ( this.page_size - 1 )
-        if( this.total > -1 && end > this.total )
-            end = this.total
+        if( this.total > -1 && end > this.total - 1 )
+            end = this.total - 1
         this.begin_next = end + 1
 
         return new Promise<Array<Data>>((resolve, reject) => {
@@ -145,9 +145,17 @@ export class RestIter<Data> implements Iter<Data> {
                         }
                     }
 
-                    response.json().then( jdata => {
-                        resolve(jdata)
-                    })
+                    if( response.headers.get( "Content-Type" ) == 'application/json' ) {
+                        response.json().then( jdata => {
+                            resolve(jdata)
+                        })
+
+                    } else {
+                        response.text().then( body => {
+                            reject( new Error(`wrong content type ${response.headers.get( "Content-Type" )} : ${body}`))
+                        })
+                    }
+
                 }).catch( err => {
                     reject( err )
                 })
