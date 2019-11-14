@@ -144,8 +144,8 @@ export class RestIter<Data> implements Iter<Data> {
                             }
                         }
                     }
-
-                    if( response.headers.get( "Content-Type" ) == 'application/json' ) {
+                                                                   
+                    if( response.headers.get( "Content-Type" ).match( 'application/json' ) ) {
                         response.json().then( jdata => {
                             resolve(jdata)
                         }).catch( err => reject( err ))
