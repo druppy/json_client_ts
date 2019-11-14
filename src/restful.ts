@@ -148,12 +148,11 @@ export class RestIter<Data> implements Iter<Data> {
                     if( response.headers.get( "Content-Type" ) == 'application/json' ) {
                         response.json().then( jdata => {
                             resolve(jdata)
-                        })
-
+                        }).catch( err => reject( err ))
                     } else {
                         response.text().then( body => {
                             reject( new Error(`wrong content type ${response.headers.get( "Content-Type" )} : ${body}`))
-                        })
+                        }).catch( err => reject( err ))
                     }
 
                 }).catch( err => {
