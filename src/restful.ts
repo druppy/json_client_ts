@@ -1,6 +1,16 @@
 import {Iter, Entity, WatchCallback} from './store'
 import {Session} from './session'
 
+export class RestError extends Error {
+    public body = ""
+
+    constructor(message, body) {
+        super(message)
+        this.name = "RestError"
+        this.body = body
+    }
+}
+
 const rest_page_size = 24
 
 /**
@@ -121,7 +131,11 @@ export class RestIter<Data> implements Iter<Data> {
                     headers: h
                 }).then((response) => {
                     if( this.options.http_errors && !response.ok) {
-                        reject( new Error( "HTTP error: " + response.statusText ))
+                        response.text().then(text => {
+                            reject( new RestError( "HTTP error: " + response.statusText, text ))
+                        }).catch(err => {
+                            reject( new Error( "HTTP error: " + response.statusText ))
+                        })
                         return
                     }
                     let start = 0, end = 0, total = -1
@@ -233,12 +247,16 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 headers: this.sess.headers_get()
             }).then((res) => {
                 if( this.options.http_errors && !res.ok) {
-                    reject( new Error( "HTTP error: " + res.statusText ))
-                } else {
-                    res.json().then(jdata => {
-                        resolve( this.normalize( jdata ))
+                    res.text().then(text => {
+                        reject( new RestError( "HTTP error: " + res.statusText, text ))
+                    }).catch(err => {
+                        reject( new Error( "HTTP error: " + res.statusText ))
                     })
+                    return
                 }
+                res.json().then(jdata => {
+                    resolve( this.normalize( jdata ))
+                })
             }).catch( err => {
                 console.error( 'Restful GET error', err );
                 reject( err )
@@ -256,12 +274,16 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 headers: this.sess.headers_get()
             }).then(res => {
                 if( this.options.http_errors && !res.ok) {
-                    reject( new Error( "HTTP error: " + res.statusText ))
-                } else {
-                    res.json().then(jdata => {
-                        resolve( jdata )
+                    res.text().then(text => {
+                        reject( new RestError( "HTTP error: " + res.statusText, text ))
+                    }).catch(err => {
+                        reject( new Error( "HTTP error: " + res.statusText ))
                     })
+                    return
                 }
+                res.json().then(jdata => {
+                    resolve( jdata )
+                })
             }).catch( err => {
                 // console.error( 'Restful PUT error', err )
                 reject( err )
@@ -279,7 +301,12 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 headers: this.sess.headers_get()
             }).then((res) => {
                 if( this.options.http_errors && !res.ok) {
-                    reject( new Error( "HTTP error: " + res.statusText ))
+                    res.text().then(text => {
+                        reject( new RestError( "HTTP error: " + res.statusText, text ))
+                    }).catch(err => {
+                        reject( new Error( "HTTP error: " + res.statusText ))
+                    })
+                    return
                 } else {
                     res.json().then(jdata => {
                         resolve( this.normalize( jdata ))
@@ -301,12 +328,16 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
                 headers: this.sess.headers_get()
             }).then( res => {
                 if( this.options.http_errors && !res.ok) {
-                    reject( new Error( "HTTP error: " + res.statusText ))
-                } else {
-                    res.json().then(jdata => {
-                        resolve( jdata )
+                    res.text().then(text => {
+                        reject( new RestError( "HTTP error: " + res.statusText, text ))
+                    }).catch(err => {
+                        reject( new Error( "HTTP error: " + res.statusText ))
                     })
+                    return
                 }
+                res.json().then(jdata => {
+                    resolve( jdata )
+                })
             }).catch( err => {
                 // console.error( 'Restful DELETE error', err );
                 reject( err )

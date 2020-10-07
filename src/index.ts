@@ -4,7 +4,7 @@ import { RestEntityBase, Options } from './restful'
 import { rpc_sess, rpc_names_sess, fetch_smd_sess, Methods } from './rpc'
 import {LocaleFn} from './common'
 export {Entity, Iter, WatchCallback} from './store'
-export {RestIter} from './restful'
+export {RestError, RestIter} from './restful'
 export {Session} from './session'
 
 // compatility functions, to emulate old global scope
