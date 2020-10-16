@@ -208,6 +208,26 @@ export class Batch {
                         code: -1
                     }))
                 } else {
+                    if( response.headers.has( 'content-language' )) {
+                        let locale = response.headers.get( 'content-language' )
+
+                        if( typeof locale == 'string')
+                            this.sess.locale_check( locale )
+                    }
+
+                    // If not a browser, get cookie from responce and set it on next header
+                    // XXX this is a quick fix and does not replace a real cookie jar 
+                    if (!is_browser && response.headers.has("Set-Cookie")) {
+                        let cookies = response.headers.get('Set-Cookie')
+
+                        if( typeof cookies == 'string' ) {
+                            let m = /(.+?)=([^;]*)/.exec( cookies )
+
+                            if( m ) 
+                                this.sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
+                        }
+                    }
+
                     let content_type = response.headers.get('Content-Type')
 
                     if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
