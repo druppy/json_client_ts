@@ -1,3 +1,4 @@
+///<amd-module name="json_client_ts"/>
 // define how the module will look like
 import { Session } from './session'
 import { RestEntityBase, Options } from './restful'
