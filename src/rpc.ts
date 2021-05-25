@@ -64,111 +64,90 @@ export function fetch_smd_sess(sess: Session) : Promise<Methods> {
 }
 
 var last_rpc_seq_id = 0
-export function rpc_sess<T extends Object>( sess: Session, method: string, ...args: any[] ) : Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-            var id = last_rpc_seq_id++;
+export async function rpc_sess<T extends Object>( sess: Session, method: string, ...args: any[] ) {    
+    var id = last_rpc_seq_id++;
 
-            let envelope = {
-                'jsonrpc': '2.0',
-                'id': id,
-                'method': method,
-                'params': args
-            };
+    const envelope = {
+        'jsonrpc': '2.0',
+        'id': id,
+        'method': method,
+        'params': args
+    };
 
-            let h = sess.headers_get()
-            h.append('Content-Type', 'application/json')
+    let h = sess.headers_get()
+    h.append('Content-Type', 'application/json')
 
-            // Time to use a proper request handler from ES6
-            let conn = fetch( sess.rpc_url_get(), {
-                method: 'POST',
-                credentials: 'same-origin',
-                body: JSON.stringify( envelope ),
-                cache: 'no-store',
-                headers: h
-            }).then((response) => {
-                if(!response.ok) {
-                    reject(new RPCError({message: `RPC HTTP communication error ${response.status}`, code: -1}))
-                } else {
-                    if( response.status != 200 ) {
-                        response.text().then( err_body => {
-                            reject( new RPCError({
-                                message: `bad RPC http response : ${err_body}`,
-                                code: -1
-                            }))
-                        }, err => {
-                            reject( new RPCError({
-                                message: `bad RPC http response error code : ${response.status}`,
-                                code: -1
-                            }))
-                        })
-                        return
-                    }
+    // Time to use a proper request handler from ES6
+    let response = await fetch( sess.rpc_url_get(), {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: JSON.stringify( envelope ),
+        cache: 'no-store',
+        headers: h
+    })
 
-                    if( response.headers.has( 'content-language' )) {
-                        let locale = response.headers.get( 'content-language' )
+    if(response.ok) {
+        if( response.status != 200 ) {
+            let err_body = await response.text()
 
-                        if( typeof locale == 'string')
-                            sess.locale_check( locale )
-                    }
-
-                    // If not a browser, get cookie from response and set it on next header
-                    // XXX this is a quick fix and does not replace a real cookie jar 
-                    if (!is_browser && response.headers.has("Set-Cookie")) {
-                        let cookies = response.headers.get('Set-Cookie')
-
-                        if( typeof cookies == 'string' ) {
-                            let m = /(.+?)=([^;]*)/.exec( cookies )
-
-                            if( m ) 
-                                sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
-                        }
-                    }
-
-                    let content_type = response.headers.get('Content-Type')
-                    if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
-                        response.json().then((res) => {
-                            if( res[ 'id' ] == id ) {
-                                if( 'error' in res ) {
-                                    // An error in the logic, user need to take action
-                                    //console.error( 'RPC method error ', res[ 'error' ] )
-
-                                    reject( new RPCError( res[ 'error' ] ))
-                                } else if( 'result' in res ) {
-                                    resolve( res[ 'result' ] )
-                                } else {
-                                    //console.error( 'RPC unknown answer ', res )
-                                }
-                            } else {
-                                // We should never end up here, and if we do the error need to be analized 
-                                //console.error( 'RPC protocol error for ', method, ' payload ',
-                                //    JSON.stringify(envelope), ' result ', res )
-
-                                reject(new RPCError({
-                                    message: 'jsonrpc sequence mismatch in method ' + method, 
-                                    code: -1
-                                }))
-                            }
-                        }, 
-                        err => {
-                            reject(new RPCError({
-                                message: `RPC response not json encoded, as expected, error ${err}`,
-                                code: -1
-                            }))
-                        })
-                    } else
-                        reject(new RPCError({
-                            message: 'RPC response not json encoded, but ' + response.headers.get('Content-Type'), 
-                            code: -1
-                        }))
-                }
-            }).catch((error) => {
-                // the backend is gone ...
-                //console.error( 'RPC comm error ', error )
-
-                reject(new RPCError({message: error, code: -1}))
+            throw new RPCError({
+                message: `bad RPC http response : ${err_body}`,
+                code: -1
             })
         }
-    )
+
+        if( response.headers.has( 'content-language' )) {
+            let locale = response.headers.get( 'content-language' )
+
+            if( typeof locale == 'string')
+                sess.locale_check( locale )
+        }
+
+        // If not a browser, get cookie from response and set it on next header
+        // XXX this is a quick fix and does not replace a real cookie jar 
+        if (!is_browser && response.headers.has("Set-Cookie")) {
+            let cookies = response.headers.get('Set-Cookie')
+
+            if( typeof cookies == 'string' ) {
+                let m = /(.+?)=([^;]*)/.exec( cookies )
+
+                if( m ) 
+                    sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
+            }
+        }
+
+        let content_type = response.headers.get('Content-Type')
+        if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
+            let res = await response.json()
+            if( res[ 'id' ] == id ) {
+                if( 'error' in res ) {
+                    // An error in the logic, user need to take action
+                    //console.error( 'RPC method error ', res[ 'error' ] )
+
+                    throw new RPCError( res[ 'error' ] )
+                } else if( 'result' in res ) {
+                    return res[ 'result' ] as T
+                } else {
+                    //console.error( 'RPC unknown answer ', res )
+                }
+            } else {
+                // We should never end up here, and if we do the error need to be analyzed 
+                //console.error( 'RPC protocol error for ', method, ' payload ',
+                //    JSON.stringify(envelope), ' result ', res )
+
+                throw new RPCError({
+                    message: 'jsonrpc sequence mismatch in method ' + method, 
+                    code: -1
+                })
+            }
+        } else
+            throw new RPCError({
+                message: 'RPC response not json encoded, but ' + response.headers.get('Content-Type'), 
+                code: -1
+            })
+    }  
+    
+    throw new RPCError({ message: `RPC HTTP communication error ${response.status}`, code: -1 })
 }
 
 /**
