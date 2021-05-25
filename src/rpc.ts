@@ -78,7 +78,7 @@ export function rpc_sess<T extends Object>( sess: Session, method: string, ...ar
             let h = sess.headers_get()
             h.append('Content-Type', 'application/json')
 
-            // Time to use a propper request handler from ES6
+            // Time to use a proper request handler from ES6
             let conn = fetch( sess.rpc_url_get(), {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -89,6 +89,21 @@ export function rpc_sess<T extends Object>( sess: Session, method: string, ...ar
                 if(!response.ok) {
                     reject(new RPCError({message: `RPC HTTP communication error ${response.status}`, code: -1}))
                 } else {
+                    if( response.status != 200 ) {
+                        response.text().then( err_body => {
+                            reject( new RPCError({
+                                message: `bad RPC http response : ${err_body}`,
+                                code: -1
+                            }))
+                        }, err => {
+                            reject( new RPCError({
+                                message: `bad RPC http response error code : ${response.status}`,
+                                code: -1
+                            }))
+                        })
+                        return
+                    }
+
                     if( response.headers.has( 'content-language' )) {
                         let locale = response.headers.get( 'content-language' )
 
@@ -96,7 +111,7 @@ export function rpc_sess<T extends Object>( sess: Session, method: string, ...ar
                             sess.locale_check( locale )
                     }
 
-                    // If not a browser, get cookie from responce and set it on next header
+                    // If not a browser, get cookie from response and set it on next header
                     // XXX this is a quick fix and does not replace a real cookie jar 
                     if (!is_browser && response.headers.has("Set-Cookie")) {
                         let cookies = response.headers.get('Set-Cookie')
@@ -133,6 +148,12 @@ export function rpc_sess<T extends Object>( sess: Session, method: string, ...ar
                                     code: -1
                                 }))
                             }
+                        }, 
+                        err => {
+                            reject(new RPCError({
+                                message: `RPC response not json encoded, as expected, error ${err}`,
+                                code: -1
+                            }))
                         })
                     } else
                         reject(new RPCError({
