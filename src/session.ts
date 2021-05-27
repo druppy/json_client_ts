@@ -1,5 +1,5 @@
 import { rpc_sess, rpc_names_sess, fetch_smd_sess, Methods } from './rpc'
-import { RestEntityBase } from './restful';
+import { RestEntityBase } from './restful'
 import { LocaleFn } from './common'
 
 export class Session {
@@ -17,7 +17,7 @@ export class Session {
         this.locale_set_fn = fn
     }
 
-    // Will be called when we get a response from backedn
+    // Will be called when we get a response from backend
     locale_check(locale: string) {
         if (this.locale_set_fn && this.locale_current != locale) {
             this.locale_set_fn(locale)

@@ -24,11 +24,8 @@ export function rpc_names_sess(sess: Session) : Promise<string[]> {
         fetch_smd_sess(sess).then( res => {
             var n : string[] = []
 
-            for( let m in res ) {
-                let method = res[ m ]
-
+            for( let m in res ) 
                 n.push( m )
-            }
 
             resolve( n )
         }).catch(reason => {
@@ -187,7 +184,7 @@ export class Batch {
             }
         })
 
-        return p
+       return p
     }
 
     public commit() : Promise<any> {
@@ -204,7 +201,7 @@ export class Batch {
             }).then((response) => {
                 if(!response.ok) {
                     reject(new RPCError({
-                        message: `RPC HTTP communication error ${response.status}`, 
+                        message: `RPC HTTP communication error ${response.status}`,
                         code: -1
                     }))
                 } else {
@@ -215,15 +212,15 @@ export class Batch {
                             this.sess.locale_check( locale )
                     }
 
-                    // If not a browser, get cookie from responce and set it on next header
-                    // XXX this is a quick fix and does not replace a real cookie jar 
+                    // If not a browser, get cookie from response and set it on next header
+                    // XXX this is a quick fix and does not replace a real cookie jar
                     if (!is_browser && response.headers.has("Set-Cookie")) {
                         let cookies = response.headers.get('Set-Cookie')
 
                         if( typeof cookies == 'string' ) {
                             let m = /(.+?)=([^;]*)/.exec( cookies )
 
-                            if( m ) 
+                            if( m )
                                 this.sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
                         }
                     }
@@ -247,7 +244,7 @@ export class Batch {
                         })
                     }
 
-                    // Reset states to make it possible use this instance as a new batch     
+                    // Reset states to make it possible use this instance as a new batch
                     this.payload = []
                     this.ids = {}
                 }
@@ -255,3 +252,4 @@ export class Batch {
         })
     }
 }
+

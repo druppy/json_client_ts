@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/druppy/json_client_ts#readme",
   "devDependencies": {
-    "typescript": "^3",
-    "@types/node-fetch": "^2.5"
+    "typescript": "^3"
   }
 }
