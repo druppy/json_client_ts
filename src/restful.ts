@@ -22,7 +22,7 @@ export function mk_query(params: Object) : string {
     let qs = '';
 
     for(let key in params) {
-        let value = params[key]
+        let value = params[key] 
 
         if( qs.length > 0 )
             qs += '&'

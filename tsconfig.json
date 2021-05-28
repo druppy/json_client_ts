@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "module": "es2015",
         "target": "es5",
         "outDir": "dist",
         "lib": [
@@ -9,12 +8,14 @@
             "es2015.promise",
             "es2015.iterable"
         ],
-        "noImplicitAny": true,
+        "noImplicitAny": false,
         "sourceMap": true
     },
     "exclude": [
         "node_modules",
         "es",
-        "lib"
+        "esnext",
+        "lib",
+        "types"
     ]
 }

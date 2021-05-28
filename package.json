@@ -4,14 +4,16 @@
   "description": "Basic functions for JsonRPC 2.0, and JsonRESTful handling, written in Typescript",
   "main": "lib/index.js",
   "module": "es/index.js",
-  "jsnext:main": "es/index.js",
-  "types": "es/index.d.ts",
+  "jsnext:main": "esnext/index.js",
+  "types": "types/index.d.ts",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "npm run postinstall:es && npm run postinstall:umd",
-    "postinstall:es": "tsc --outDir es --declaration",
-    "postinstall:umd": "tsc --module umd --outDir lib"
+    "postinstall": "npm run postinstall:es && npm run postinstall:esnext && npm run postinstall:umd && npm run postinstall:types",
+    "postinstall:es": "tsc --module commonjs --outDir es",
+    "postinstall:esnext": "tsc --module esnext --outDir esnext",
+    "postinstall:umd": "tsc --module umd --outDir lib",
+    "postinstall:types": "tsc --declaration --emitDeclarationOnly --outDir types"
   },
   "repository": {
     "type": "git",
