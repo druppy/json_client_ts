@@ -8,7 +8,7 @@ export {Entity, Iter, WatchCallback} from './store'
 export {RestError, RestIter} from './restful'
 export {Session} from './session'
 
-// compatility functions, to emulate old global scope
+// compatibility functions, to emulate old global scope
 let global_session = new Session()
 
 // make sure all http errors is handled as rejects (exceptions using await)
