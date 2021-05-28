@@ -187,69 +187,68 @@ export class Batch {
        return p
     }
 
-    public commit() : Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            let h = this.sess.headers_get()
-            h.append('Content-Type', 'application/json')
+    public async commit() {
+        let h = this.sess.headers_get()
+        h.append('Content-Type', 'application/json')
 
-            fetch( this.sess.rpc_url_get(), {
-                method: 'POST',
-                credentials: 'same-origin',
-                body: JSON.stringify( this.payload ),
-                cache: 'no-store',
-                headers: h
-            }).then((response) => {
-                if(!response.ok) {
-                    reject(new RPCError({
-                        message: `RPC HTTP communication error ${response.status}`,
-                        code: -1
-                    }))
-                } else {
-                    if( response.headers.has( 'content-language' )) {
-                        let locale = response.headers.get( 'content-language' )
-
-                        if( typeof locale == 'string')
-                            this.sess.locale_check( locale )
-                    }
-
-                    // If not a browser, get cookie from response and set it on next header
-                    // XXX this is a quick fix and does not replace a real cookie jar
-                    if (!is_browser && response.headers.has("Set-Cookie")) {
-                        let cookies = response.headers.get('Set-Cookie')
-
-                        if( typeof cookies == 'string' ) {
-                            let m = /(.+?)=([^;]*)/.exec( cookies )
-
-                            if( m )
-                                this.sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
-                        }
-                    }
-
-                    let content_type = response.headers.get('Content-Type')
-
-                    if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
-                        response.json().then((res) => {
-                            for( let r of res ) {
-                                let id = parseInt( r[ 'id' ] )
-
-                                if( id in this.ids ) {
-                                    let cur = this.ids[ id ]
-
-                                    if( 'result' in res )
-                                        cur.resolve( res[ 'result' ])
-                                    else
-                                        cur.reject( new RPCError( res[ 'error' ]))
-                                }
-                            }
-                        })
-                    }
-
-                    // Reset states to make it possible use this instance as a new batch
-                    this.payload = []
-                    this.ids = {}
-                }
-            })
+        let response = await fetch( this.sess.rpc_url_get(), {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: JSON.stringify( this.payload ),
+            cache: 'no-store',
+            headers: h
         })
+
+        if(!response.ok) {
+            throw new RPCError({
+                message: `RPC HTTP communication error ${response.status}`,
+                code: -1
+            })
+        } else {
+            if( response.headers.has( 'content-language' )) {
+                let locale = response.headers.get( 'content-language' )
+
+                if( typeof locale == 'string')
+                    this.sess.locale_check( locale )
+            }
+
+            // If not a browser, get cookie from response and set it on next header
+            // XXX this is a quick fix and does not replace a real cookie jar
+            if (!is_browser && response.headers.has("Set-Cookie")) {
+                let cookies = response.headers.get('Set-Cookie')
+
+                if( typeof cookies == 'string' ) {
+                    let m = /(.+?)=([^;]*)/.exec( cookies )
+
+                    if( m )
+                        this.sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
+                }
+            }
+
+            let content_type = response.headers.get('Content-Type')
+
+            if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
+                // split the result over all requests and trigger there promise
+                let res = await response.json()
+
+                for( let r of res ) {
+                    let id = parseInt( r[ 'id' ] )
+
+                    if( id in this.ids ) {
+                        let cur = this.ids[ id ]
+
+                        if( 'result' in res )
+                            cur.resolve( res[ 'result' ])
+                        else
+                            cur.reject( new RPCError( res[ 'error' ]))
+                    }
+                }    
+            }
+
+            // Reset states to make it possible use this instance as a new batch
+            this.payload = []
+            this.ids = {}
+            this.last_id = 0
+        }    
     }
 }
-
