@@ -4,7 +4,7 @@ import {Session} from './session'
 export class RestError extends Error {
     public body = ""
 
-    constructor(message, body) {
+    constructor(message: string, body: string) {
         super(message)
         this.name = "RestError"
         this.body = body
@@ -67,7 +67,6 @@ export class RestIter<Data> implements Iter<Data> {
     private begin_next = 0
     private page_size = rest_page_size
     private entity_name: string
-    private args: any
     private nfn?: NormalizeFn<Data>
     private sess: Session
     private options: Options
@@ -77,7 +76,7 @@ export class RestIter<Data> implements Iter<Data> {
     constructor( sess: Session, entity_name: string, args: Object, options: Options, order?: string[], offset?: number, limit?: number, nfn?: NormalizeFn<Data> ) {
         this.sess = sess
         this.entity_name = entity_name
-        this.args = args
+        
         if( nfn != undefined )
             this.nfn = nfn
         if( offset != undefined )
@@ -118,8 +117,7 @@ export class RestIter<Data> implements Iter<Data> {
 
         return new Promise<Array<Data>>((resolve, reject) => {
             // fetch buffer if none has been found before
-            let key = `${begin}-${end}`
-
+            
             let p = new Promise<any>(( resolve, reject ) => {
                 let h = this.sess.headers_get()
                 h.append('Range', `items=${begin}-${end}` )
@@ -132,13 +130,13 @@ export class RestIter<Data> implements Iter<Data> {
                 }).then((response) => {
                     if( this.options.http_errors && !response.ok) {
                         response.text().then(text => {
-                            reject( new RestError( "HTTP error: " + response.statusText, text ))
+                            reject( new RestError( `HTTP error: ${response.statusText}`, text ))
                         }).catch(err => {
-                            reject( new Error( "HTTP error: " + response.statusText ))
+                            reject( new Error( `HTTP error: ${response.statusText} : ${err}` ))
                         })
                         return
                     }
-                    let start = 0, end = 0, total = -1
+                    let total = -1
 
                     if( response.headers.has( 'Content-Range' )) {
                         let range = response.headers.get('Content-Range')
@@ -147,7 +145,7 @@ export class RestIter<Data> implements Iter<Data> {
                             let res = items_reg.exec( range )
 
                             if( res ) {
-                                start = parseInt( res[ 1 ] )
+                                // let start = parseInt( res[ 1 ] )
                                 end = parseInt( res[ 2 ] )
                                 total = -1
 
@@ -238,111 +236,70 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
         return data[ this.key_name ]
     }
 
-    public get( key: number ) : Promise<Data> {
-        return new Promise<Data>((resolve, reject) => {
-            fetch( this.url_get( key ), {
-                method: 'GET',
-                credentials: 'same-origin',
-                cache: 'no-store',
-                headers: this.sess.headers_get()
-            }).then((res) => {
-                if( this.options.http_errors && !res.ok) {
-                    res.text().then(text => {
-                        reject( new RestError( "HTTP error: " + res.statusText, text ))
-                    }).catch(err => {
-                        reject( new Error( "HTTP error: " + res.statusText ))
-                    })
-                    return
-                }
-                res.json().then(jdata => {
-                    resolve( this.normalize( jdata ))
-                })
-            }).catch( err => {
-                console.error( 'Restful GET error', err );
-                reject( err )
-            })
+    public async get( key: number ) {
+        let res = await fetch( this.url_get( key ), {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: this.sess.headers_get()
         })
+
+        if( this.options.http_errors && !res.ok) {
+            let text = await res.text()
+            throw new RestError( `HTTP error: ${res.statusText}`, text )
+        }
+    
+        return this.normalize( await res.json() )   
     }
 
-    public set( key: number, data: Data ) : Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            fetch( this.url_get( key ), {
-                method: 'PUT',
-                credentials: 'same-origin',
-                cache: 'no-store',
-                body: JSON.stringify( this.de_normalize( data )),
-                headers: this.sess.headers_get()
-            }).then(res => {
-                if( this.options.http_errors && !res.ok) {
-                    res.text().then(text => {
-                        reject( new RestError( "HTTP error: " + res.statusText, text ))
-                    }).catch(err => {
-                        reject( new Error( "HTTP error: " + res.statusText ))
-                    })
-                    return
-                }
-                res.json().then(jdata => {
-                    resolve( jdata )
-                })
-            }).catch( err => {
-                // console.error( 'Restful PUT error', err )
-                reject( err )
-            })
+    public async set( key: number, data: Data ) {
+        let res = await fetch( this.url_get( key ), {
+            method: 'PUT',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            body: JSON.stringify( this.de_normalize( data )),
+            headers: this.sess.headers_get()
         })
+
+        if( this.options.http_errors && !res.ok) {
+            let text = await res.text()
+            throw new RestError( "HTTP error: " + res.statusText, text )
+        }
+
+        return await res.json() as boolean
     }
 
-    public create( data: Data ) : Promise<Data> {
-        return new Promise<Data>((resolve, reject) => {
-            fetch( this.url_get(), {
-                method: 'POST',
-                credentials: 'same-origin',
-                cache: 'no-store',
-                body: JSON.stringify( this.de_normalize( data )),
-                headers: this.sess.headers_get()
-            }).then((res) => {
-                if( this.options.http_errors && !res.ok) {
-                    res.text().then(text => {
-                        reject( new RestError( "HTTP error: " + res.statusText, text ))
-                    }).catch(err => {
-                        reject( new Error( "HTTP error: " + res.statusText ))
-                    })
-                    return
-                } else {
-                    res.json().then(jdata => {
-                        resolve( this.normalize( jdata ))
-                    })
-                }
-            }).catch( err => {
-                // console.error( 'Restful POST error', err );
-                reject( err )
-            })
+    public async create( data: Data ) {
+        let res = await fetch( this.url_get(), {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            body: JSON.stringify( this.de_normalize( data )),
+            headers: this.sess.headers_get()
         })
+
+        if( this.options.http_errors && !res.ok) {
+            let text = await res.text()
+            throw new RestError( "HTTP error: " + res.statusText, text )
+        } 
+        
+        return this.normalize(await res.json())
     }
 
-    public remove( key: number ) : Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            fetch( this.url_get( key ), {
-                method: 'DELETE',
-                credentials: 'same-origin',
-                cache: 'no-store',
-                headers: this.sess.headers_get()
-            }).then( res => {
-                if( this.options.http_errors && !res.ok) {
-                    res.text().then(text => {
-                        reject( new RestError( "HTTP error: " + res.statusText, text ))
-                    }).catch(err => {
-                        reject( new Error( "HTTP error: " + res.statusText ))
-                    })
-                    return
-                }
-                res.json().then(jdata => {
-                    resolve( jdata )
-                })
-            }).catch( err => {
-                // console.error( 'Restful DELETE error', err );
-                reject( err )
-            })
+    public async remove( key: number ) {
+        let res = await fetch( this.url_get( key ), {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: this.sess.headers_get()
         })
+
+        if( this.options.http_errors && !res.ok) {
+            let text = await res.text()
+            throw new RestError( "HTTP error: " + res.statusText, text )
+        }
+
+        return await res.json() as boolean
     }
 
     public watch( cb: WatchCallback<Data> ) {

@@ -19,45 +19,35 @@ export interface Methods {
 }
 
 // Return a list of method names
-export function rpc_names_sess(sess: Session) : Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-        fetch_smd_sess(sess).then( res => {
-            var n : string[] = []
+export async function rpc_names_sess(sess: Session) {   
+    let res = fetch_smd_sess(sess)
+    var n : string[] = []
 
-            for( let m in res ) 
-                n.push( m )
+    for( let m in res ) 
+        n.push( m )
 
-            resolve( n )
-        }).catch(reason => {
-            reject( reason )
-        })
-    })
+    return n
 }
 
-export function fetch_smd_sess(sess: Session) : Promise<Methods> {
-    return new Promise<Methods>((resolve, reject) => {
-        fetch( sess.service_url_get( '/service.smd' ), {} ).then(( res: {[i:string]:any} )=> {
-            let methods: Methods = {}
+export async function fetch_smd_sess(sess: Session) {
+    let res = await fetch( sess.service_url_get( '/service.smd' ), {} )
+    let methods: Methods = {}
 
-            for( var name in res['services'] ) {
-                var params = res['services'][ name ]
+    for( var name in res['services'] ) {
+        var params = res['services'][ name ]
 
-                var method : Method = {
-                    return_type: String(params['return']),
-                    params: []
-                };
+        var method : Method = {
+            return_type: String(params['return']),
+            params: []
+        };
 
-                for( let p in params[ 'parameters' ] )
-                    method.params.push(<Param><any>p)
+        for( let p in params[ 'parameters' ] )
+            method.params.push(<Param><any>p)
 
-                methods[ String( name )] = method
-            }
+        methods[ String( name )] = method
+    }
 
-            resolve( methods )
-        }).catch( (reason) => {
-            reject( reason )
-        })
-    })
+    return methods 
 }
 
 var last_rpc_seq_id = 0
