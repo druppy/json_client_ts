@@ -1,5 +1,6 @@
 import {Iter, Entity, WatchCallback} from './store'
 import {Session} from './session'
+import { FetchResponse, FetchAsJson } from './common'
 
 export class RestError extends Error {
     public body = ""
@@ -115,76 +116,51 @@ export class RestIter<Data> implements Iter<Data> {
             end = this.total - 1
         this.begin_next = end + 1
 
-        return new Promise<Array<Data>>((resolve, reject) => {
-            // fetch buffer if none has been found before
-            
-            let p = new Promise<any>(( resolve, reject ) => {
-                let h = this.sess.headers_get()
-                h.append('Range', `items=${begin}-${end}` )
+        const fn = async () => {
+            let res = new Array<Data>()
 
-                fetch( this.url, {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    cache: 'no-store',
-                    headers: h
-                }).then((response) => {
-                    if( this.options.http_errors && !response.ok) {
-                        response.text().then(text => {
-                            reject( new RestError( `HTTP error: ${response.statusText}`, text ))
-                        }).catch(err => {
-                            reject( new Error( `HTTP error: ${response.statusText} : ${err}` ))
-                        })
-                        return
-                    }
-                    let total = -1
+            let h = this.sess.headers_get()
+            h.append('Range', `items=${begin}-${end}` )
 
-                    if( response.headers.has( 'Content-Range' )) {
-                        let range = response.headers.get('Content-Range')
+            let response = await fetch( this.url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: h
+            })
 
-                        if (typeof range == 'string') {
-                            let res = items_reg.exec( range )
+            await FetchResponse( this.sess, response )
 
-                            if( res ) {
-                                // let start = parseInt( res[ 1 ] )
-                                end = parseInt( res[ 2 ] )
-                                total = -1
+            let total = -1
+            if( response.headers.has( 'Content-Range' )) {
+                let range = response.headers.get('Content-Range')
 
-                                if( res.length == 4 && res[ 3 ].length > 0 ) {
-                                    total = parseInt( res[ 3 ] )
-                                    this.total = total
-                                }
-                            }
+                if (typeof range == 'string') {
+                    let res = items_reg.exec( range )
+
+                    if( res ) {
+                        // let start = parseInt( res[ 1 ] )
+                        end = parseInt( res[ 2 ] )
+                        total = -1
+
+                        if( res.length == 4 && res[ 3 ].length > 0 ) {
+                            total = parseInt( res[ 3 ] )
+                            this.total = total
                         }
                     }
+                }
+            }
                                                                    
-                    if( response.headers.get( "Content-Type" ).match( 'application/json' ) ) {
-                        response.json().then( jdata => {
-                            resolve(jdata)
-                        }).catch( err => reject( err ))
-                    } else {
-                        response.text().then( body => {
-                            reject( new Error(`wrong content type ${response.headers.get( "Content-Type" )} : ${body}`))
-                        }).catch( err => reject( err ))
-                    }
+            for( let d of await FetchAsJson( response ))
+                if( this.nfn )
+                    res.push( this.nfn( d ))
+        
+            return res            
+        }
 
-                }).catch( err => {
-                    reject( err )
-                })
-            })
-
-            p.then( data => {
-                let res = new Array<Data>()
-
-                for( let d of data )
-                    if( this.nfn )
-                        res.push( this.nfn( d ))
-
-                resolve( res )
-            }).catch(err => {
-                reject( err )
-            })
-        })
+        return fn()
     }
+
 }
 
 export interface Options {
@@ -244,12 +220,9 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
             headers: this.sess.headers_get()
         })
 
-        if( this.options.http_errors && !res.ok) {
-            let text = await res.text()
-            throw new RestError( `HTTP error: ${res.statusText}`, text )
-        }
+        await FetchResponse( this.sess, res )
     
-        return this.normalize( await res.json() )   
+        return this.normalize( await FetchAsJson( res ) )   
     }
 
     public async set( key: number, data: Data ) {
@@ -261,12 +234,9 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
             headers: this.sess.headers_get()
         })
 
-        if( this.options.http_errors && !res.ok) {
-            let text = await res.text()
-            throw new RestError( "HTTP error: " + res.statusText, text )
-        }
+        await FetchResponse( this.sess, res )
 
-        return await res.json() as boolean
+        return await FetchAsJson( res ) as boolean
     }
 
     public async create( data: Data ) {
@@ -278,12 +248,9 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
             headers: this.sess.headers_get()
         })
 
-        if( this.options.http_errors && !res.ok) {
-            let text = await res.text()
-            throw new RestError( "HTTP error: " + res.statusText, text )
-        } 
+        await FetchResponse( this.sess, res )
         
-        return this.normalize(await res.json())
+        return this.normalize(await FetchAsJson( res ))
     }
 
     public async remove( key: number ) {
@@ -294,12 +261,9 @@ export class RestEntityBase<Data, ArgsT> implements Entity<number, Data, ArgsT> 
             headers: this.sess.headers_get()
         })
 
-        if( this.options.http_errors && !res.ok) {
-            let text = await res.text()
-            throw new RestError( "HTTP error: " + res.statusText, text )
-        }
-
-        return await res.json() as boolean
+        await FetchResponse( this.sess, res )
+        
+        return await FetchAsJson( res ) as boolean
     }
 
     public watch( cb: WatchCallback<Data> ) {

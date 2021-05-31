@@ -1,8 +1,6 @@
-import {RPCError} from './common'
+import {RPCError, FetchResponse, FetchAsJson} from './common'
 import {Session} from './session'
 
-let browserCheck = new Function("try {return this===window;}catch(e){ return false;}");
-let is_browser = browserCheck();
 
 export interface Param {
     type: string; 
@@ -73,68 +71,30 @@ export async function rpc_sess<T extends Object>( sess: Session, method: string,
         headers: h
     })
 
-    if(response.ok) {
-        if( response.status != 200 ) {
-            let err_body = await response.text()
+    await FetchResponse( sess, response )
+    const res = await FetchAsJson( response )
 
-            throw new RPCError({
-                message: `bad RPC http response : ${err_body}`,
-                code: -1
-            })
+    if( res[ 'id' ] == id ) {
+        if( 'error' in res ) {
+            // An error in the logic, user need to take action
+            //console.error( 'RPC method error ', res[ 'error' ] )
+
+            throw new RPCError( res[ 'error' ] )
+        } else if( 'result' in res ) {
+            return res[ 'result' ] as T
+        } else {
+            //console.error( 'RPC unknown answer ', res )
         }
+    } else {
+        // We should never end up here, and if we do the error need to be analyzed 
+        //console.error( 'RPC protocol error for ', method, ' payload ',
+        //    JSON.stringify(envelope), ' result ', res )
 
-        if( response.headers.has( 'content-language' )) {
-            let locale = response.headers.get( 'content-language' )
-
-            if( typeof locale == 'string')
-                sess.locale_check( locale )
-        }
-
-        // If not a browser, get cookie from response and set it on next header
-        // XXX this is a quick fix and does not replace a real cookie jar 
-        if (!is_browser && response.headers.has("Set-Cookie")) {
-            let cookies = response.headers.get('Set-Cookie')
-
-            if( typeof cookies == 'string' ) {
-                let m = /(.+?)=([^;]*)/.exec( cookies )
-
-                if( m ) 
-                    sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
-            }
-        }
-
-        let content_type = response.headers.get('Content-Type')
-        if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
-            let res = await response.json()
-            if( res[ 'id' ] == id ) {
-                if( 'error' in res ) {
-                    // An error in the logic, user need to take action
-                    //console.error( 'RPC method error ', res[ 'error' ] )
-
-                    throw new RPCError( res[ 'error' ] )
-                } else if( 'result' in res ) {
-                    return res[ 'result' ] as T
-                } else {
-                    //console.error( 'RPC unknown answer ', res )
-                }
-            } else {
-                // We should never end up here, and if we do the error need to be analyzed 
-                //console.error( 'RPC protocol error for ', method, ' payload ',
-                //    JSON.stringify(envelope), ' result ', res )
-
-                throw new RPCError({
-                    message: 'jsonrpc sequence mismatch in method ' + method, 
-                    code: -1
-                })
-            }
-        } else
-            throw new RPCError({
-                message: 'RPC response not json encoded, but ' + response.headers.get('Content-Type'), 
-                code: -1
-            })
-    }  
-    
-    throw new RPCError({ message: `RPC HTTP communication error ${response.status}`, code: -1 })
+        throw new RPCError({
+            message: 'jsonrpc sequence mismatch in method ' + method, 
+            code: -1
+        })
+    }
 }
 
 /**
@@ -189,56 +149,26 @@ export class Batch {
             headers: h
         })
 
-        if(!response.ok) {
-            throw new RPCError({
-                message: `RPC HTTP communication error ${response.status}`,
-                code: -1
-            })
-        } else {
-            if( response.headers.has( 'content-language' )) {
-                let locale = response.headers.get( 'content-language' )
+        await FetchResponse(this.sess, response )
+        const res = await FetchAsJson( response )
 
-                if( typeof locale == 'string')
-                    this.sess.locale_check( locale )
+        for( let r of res ) {
+            let id = parseInt( r[ 'id' ] )
+
+            if( id in this.ids ) {
+                let cur = this.ids[ id ]
+
+                if( 'result' in res )
+                    cur.resolve( res[ 'result' ])
+                else
+                    cur.reject( new RPCError( res[ 'error' ]))
             }
-
-            // If not a browser, get cookie from response and set it on next header
-            // XXX this is a quick fix and does not replace a real cookie jar
-            if (!is_browser && response.headers.has("Set-Cookie")) {
-                let cookies = response.headers.get('Set-Cookie')
-
-                if( typeof cookies == 'string' ) {
-                    let m = /(.+?)=([^;]*)/.exec( cookies )
-
-                    if( m )
-                        this.sess.header_add( "Cookie", `${m[1]}=${m[2]}` )
-                }
-            }
-
-            let content_type = response.headers.get('Content-Type')
-
-            if (typeof content_type == 'string' && content_type.match( 'application/json' )) {
-                // split the result over all requests and trigger there promise
-                let res = await response.json()
-
-                for( let r of res ) {
-                    let id = parseInt( r[ 'id' ] )
-
-                    if( id in this.ids ) {
-                        let cur = this.ids[ id ]
-
-                        if( 'result' in res )
-                            cur.resolve( res[ 'result' ])
-                        else
-                            cur.reject( new RPCError( res[ 'error' ]))
-                    }
-                }    
-            }
-
-            // Reset states to make it possible use this instance as a new batch
-            this.payload = []
-            this.ids = {}
-            this.last_id = 0
         }    
-    }
+
+        // Reset states to make it possible use this instance as a new batch
+        this.payload = []
+        this.ids = {}
+        this.last_id = 0
+    }    
+    
 }
