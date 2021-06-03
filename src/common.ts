@@ -36,6 +36,9 @@ export async function FetchResponse( sess: Session, res: Response ) {
         if( res.status != 200 ) {
             let err_body = await res.text()
 
+            if( res.status == 409 ) 
+                throw Error(`duplication error : ${err_body}`)
+
             throw new Error(`bad http response : ${err_body}`)
         }
 
