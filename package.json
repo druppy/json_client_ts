@@ -1,6 +1,6 @@
 {
   "name": "json_client_ts",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "Basic functions for JsonRPC 2.0, and JsonRESTful handling, written in Typescript",
   "main": "lib/index.js",
   "module": "es/index.js",
