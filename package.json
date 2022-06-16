@@ -1,6 +1,6 @@
 {
   "name": "json_client_ts",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "Basic functions for JsonRPC 2.0, and JsonRESTful handling, written in Typescript",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -10,10 +10,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "npm run postinstall:es && npm run postinstall:esnext && npm run postinstall:umd && npm run postinstall:types",
-    "postinstall:es": "tsc --module commonjs --outDir es",
-    "postinstall:esnext": "tsc --module esnext --outDir esnext",
-    "postinstall:umd": "tsc --module umd --outDir lib",
-    "postinstall:types": "tsc --declaration --emitDeclarationOnly --outDir types"
+    "postinstall:es": "tsc --module commonjs --outDir es --skipLibCheck",
+    "postinstall:esnext": "tsc --module esnext --outDir esnext --skipLibCheck",
+    "postinstall:umd": "tsc --module umd --outDir lib --skipLibCheck",
+    "postinstall:types": "tsc --declaration --emitDeclarationOnly --outDir types --skipLibCheck"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,6 @@
   },
   "homepage": "https://github.com/druppy/json_client_ts#readme",
   "devDependencies": {
-    "typescript": "^3"
+    "typescript": "^4"
   }
 }
